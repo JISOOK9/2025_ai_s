@@ -1,0 +1,86 @@
+# 데이터베이스 설정
+database:
+  host: ${DB_HOST:localhost}
+  port: ${DB_PORT:5432}
+  name: ${DB_NAME:subscription_hub}
+  user: ${DB_USER:postgres}
+  password: ${DB_PASSWORD:password}
+  
+# Redis 설정
+redis:
+  host: ${REDIS_HOST:localhost}
+  port: ${REDIS_PORT:6379}
+  db: ${REDIS_DB:0}
+  password: ${REDIS_PASSWORD:}
+
+# AWS 설정
+aws:
+  region: ${AWS_REGION:ap-northeast-2}
+  s3_bucket: ${S3_BUCKET:churn-prediction-data}
+  
+# 모델 설정
+model:
+  version: "v1.0.0"
+  target_column: "churn_label"
+  feature_window_days: 30
+  prediction_window_days: 14
+  
+  # 임계값 설정
+  thresholds:
+    high_risk: 0.7
+    medium_risk: 0.4
+    low_risk: 0.2
+    
+  # 앙상블 가중치
+  ensemble_weights:
+    gbdt: 0.6
+    lstm: 0.4
+
+# 피처 설정
+features:
+  # 결제 관련 피처 (14일, 30일 윈도우)
+  payment:
+    - payment_fail_cnt_14d
+    - payment_fail_cnt_30d
+    - payment_succ_cnt_14d
+    - payment_succ_cnt_30d
+    - coupon_amt_14d
+    - coupon_amt_30d
+    - refund_amt_14d
+    - refund_amt_30d
+    - avg_payment_amt_14d
+    - avg_payment_amt_30d
+    
+  # 상품 변경 관련 피처
+  product:
+    - product_switch_cnt_14d
+    - product_switch_cnt_30d
+    - downgrade_cnt_14d
+    - downgrade_cnt_30d
+    
+  # 행동 로그 피처
+  behavior:
+    - cancel_keyword_search_14d
+    - faq_cancel_views_14d
+    - cancel_page_visit_14d
+    - support_contact_14d
+
+# 파이프라인 설정
+pipeline:
+  batch_size: 1000
+  feature_store_refresh_hours: 6
+  model_retrain_days: 30
+  
+# API 설정
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+  timeout: 30
+  
+# 로깅 설정
+logging:
+  level: INFO
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
+  rotation: "1 day"
+  retention: "30 days"
