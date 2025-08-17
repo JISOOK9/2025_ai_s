@@ -1,9 +1,0 @@
-
-spring:
-  datasource:
-    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    username: ${DB_USER}
-    password: ${DB_PASS}
-model:
-  path: ${MODEL_PATH:/tmp/model.onnx}
-server: { port: 8080 }

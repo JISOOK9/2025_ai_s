@@ -1,3 +1,0 @@
-
-WITH params AS (SELECT 14::int AS N_DAYS_BEFORE_CANCEL, 365::int AS LOOKBACK_DAYS)
-SELECT 1 LIMIT 0; -- paste full SQL later

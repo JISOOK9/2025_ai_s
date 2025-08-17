@@ -1,5 +1,0 @@
-
-rules:
-  - when: "risk_level == 'high' and features.cancel_page_visit_14d == 1"
-    action: coupon
-    params: { coupon_id: CANCEL_SAVE10, expire_days: 7 }
