@@ -7,17 +7,15 @@ WITH params AS (
 ),
 cancel_events AS (
     SELECT 
-        s.user_id,
-        s.prod_id,
+        s.sbsc_id,
         MIN(s.stat_end_dt) AS cancel_dt
     FROM TBIL_SBSC_STAT_L s
     WHERE s.sbsc_stat_cd = 'CANCELLED'
-    GROUP BY s.user_id, s.prod_id
+    GROUP BY s.sbsc_id
 ),
 base AS (
     SELECT 
-        p.user_id,
-        p.prod_id,
+        p.sbsc_id,
         d.feature_date,
         CASE 
             WHEN c.cancel_dt IS NOT NULL 
@@ -26,7 +24,7 @@ base AS (
             THEN 1 ELSE 0
         END AS label
     FROM (
-        SELECT DISTINCT user_id, prod_id FROM TBIL_SBSC_STAT_L
+        SELECT DISTINCT sbsc_id FROM TBIL_SBSC_STAT_L
     ) p
     CROSS JOIN LATERAL (
         SELECT generate_series(
@@ -36,13 +34,11 @@ base AS (
         )::date AS feature_date
     ) d
     LEFT JOIN cancel_events c
-      ON c.user_id = p.user_id
-     AND c.prod_id = p.prod_id
+      ON c.sbsc_id = p.sbsc_id
 ),
 pmt_features AS (
     SELECT 
-        user_id,
-        prod_id,
+        sbsc_id,
         feature_date,
         COUNT(*) FILTER (WHERE pmt_rslt_cd != 'SUCCESS'
                          AND pmt_req_dt >= feature_date - (SELECT WIN_14D FROM params) * INTERVAL '1 day'
@@ -73,14 +69,12 @@ pmt_features AS (
                          AND pmt_req_dt < feature_date) AS avg_amt_30d
     FROM base b
     LEFT JOIN TBIL_SBSC_PMT_HIST_L p
-      ON p.user_id = b.user_id
-     AND p.prod_id = b.prod_id
-    GROUP BY user_id, prod_id, feature_date
+      ON p.sbsc_id = b.sbsc_id
+    GROUP BY sbsc_id, feature_date
 ),
 switch_features AS (
     SELECT 
-        user_id,
-        prod_id,
+        sbsc_id,
         feature_date,
         COUNT(*) FILTER (WHERE swtch_req_dt >= feature_date - (SELECT WIN_14D FROM params) * INTERVAL '1 day'
                          AND swtch_req_dt < feature_date) AS switch_cnt_14d,
@@ -91,14 +85,12 @@ switch_features AS (
                          AND swtch_req_dt < feature_date) AS downgraded_30d
     FROM base b
     LEFT JOIN TBIL_SBSC_PROD_SWTCH_L s
-      ON s.user_id = b.user_id
-     AND s.prod_id = b.prod_id
-    GROUP BY user_id, prod_id, feature_date
+      ON s.sbsc_id = b.sbsc_id
+    GROUP BY sbsc_id, feature_date
 ),
 behavior_features AS (
     SELECT 
-        user_id,
-        prod_id,
+        sbsc_id,
         feature_date,
         COUNT(*) FILTER (WHERE event_type = 'SEARCH' AND keyword ILIKE '%해지%'
                          AND event_dt >= feature_date - (SELECT WIN_14D FROM params) * INTERVAL '1 day'
@@ -111,19 +103,18 @@ behavior_features AS (
                          AND event_dt < feature_date) AS cancel_page_visit_14d
     FROM base b
     LEFT JOIN user_behavior_log l
-      ON l.user_id = b.user_id
-     AND l.prod_id = b.prod_id
-    GROUP BY user_id, prod_id, feature_date
+      ON l.sbsc_id = b.sbsc_id
+    GROUP BY sbsc_id, feature_date
 )
 SELECT 
     b.user_id,
-    b.prod_id,
+    b.sbsc_id,
     b.feature_date,
     b.label,
-    p.* EXCEPT(user_id, prod_id, feature_date),
-    s.* EXCEPT(user_id, prod_id, feature_date),
-    h.* EXCEPT(user_id, prod_id, feature_date)
+    p.* EXCEPT(user_id, sbsc_id, feature_date),
+    s.* EXCEPT(user_id, sbsc_id, feature_date),
+    h.* EXCEPT(user_id, sbsc_id, feature_date)
 FROM base b
-LEFT JOIN pmt_features p USING (user_id, prod_id, feature_date)
-LEFT JOIN switch_features s USING (user_id, prod_id, feature_date)
-LEFT JOIN behavior_features h USING (user_id, prod_id, feature_date);
+LEFT JOIN pmt_features p USING (user_id, sbsc_id, feature_date)
+LEFT JOIN switch_features s USING (user_id, sbsc_id, feature_date)
+LEFT JOIN behavior_features h USING (user_id, sbsc_id, feature_date);
