@@ -133,6 +133,20 @@ Response:
 {
   "model_version": "v1.2.0",
   "score": 0.83,
+  "risk_level": "high"
+}
+```
+
+### POST /api/v1/churn/score/detail
+Request:
+```json
+{ "user_id": "uuid", "prod_id": "PROD123" }
+```
+Response:
+```json
+{
+  "model_version": "v1.2.0",
+  "score": 0.83,
   "risk_level": "high",
   "top_factors": [
     {"name": "cancel_page_visit_14d", "contribution": 0.21}

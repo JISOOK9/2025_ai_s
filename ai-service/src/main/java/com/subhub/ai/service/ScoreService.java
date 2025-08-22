@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class ScoringService {
+public class ScoreService {
 
   private static final int TOP_N = 3;
 
@@ -21,7 +21,7 @@ public class ScoringService {
 
   private final FeatureAssembler features;
 
-  public ScoringService(FeatureAssembler f) {
+  public ScoreService(FeatureAssembler f) {
     this.features = f;
   }
 
@@ -37,7 +37,7 @@ public class ScoringService {
     session = env.createSession(modelPath, new OrtSession.SessionOptions());
   }
 
-  public ScoreRes score(java.util.UUID userId, String prodId) throws Exception {
+  private ScoreRes score(java.util.UUID userId, String prodId) throws Exception {
     double[] f = features.assemble(userId, prodId);
     float[] ff = new float[f.length];
     for (int i = 0; i < f.length; i++) {
@@ -67,6 +67,15 @@ public class ScoringService {
       String risk = score >= 0.8 ? "high" : score >= 0.5 ? "med" : "low";
       return new ScoreRes(java.util.UUID.randomUUID().toString(), "churn_v1", score, risk, topFactors, null);
     }
+  }
+
+  public SimpleScoreRes simpleScore(java.util.UUID userId, String prodId) throws Exception {
+    ScoreRes res = score(userId, prodId);
+    return new SimpleScoreRes(res.requestId(), res.modelVersion(), res.score(), res.riskLevel());
+  }
+
+  public ScoreRes detailScore(java.util.UUID userId, String prodId) throws Exception {
+    return score(userId, prodId);
   }
 }
 
